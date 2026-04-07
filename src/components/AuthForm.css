@@ -1,0 +1,217 @@
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--sh-background) 0%, color-mix(in srgb, var(--sh-background) 70%, var(--sh-surface)) 100%);
+  padding: 1.5rem;
+  background-image:
+    radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--sh-primary) 12%, transparent) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, color-mix(in srgb, var(--sh-accent) 12%, transparent) 0%, transparent 40%),
+    linear-gradient(135deg, var(--sh-background) 0%, color-mix(in srgb, var(--sh-background) 70%, var(--sh-surface)) 100%);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background-color: var(--sh-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.1);
+  padding: 2rem;
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-card h2 {
+  color: var(--sh-text-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  margin-top: 0;
+}
+
+.auth-form-group {
+  margin-bottom: 1.2rem;
+}
+
+.auth-error {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, #ef4444 45%, transparent);
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  color: #b91c1c;
+  font-size: 0.88rem;
+  text-align: left;
+}
+
+.auth-form-group label {
+  display: block;
+  color: var(--sh-text-primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.auth-form-group input {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background-color: var(--sh-background);
+  color: var(--sh-text-primary);
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.auth-form-group input:focus {
+  outline: none;
+  border-color: var(--sh-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sh-primary) 12%, transparent);
+}
+
+.auth-form-group input::placeholder {
+  color: var(--sh-text-muted);
+}
+
+.auth-submit-btn {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--sh-accent) 0%, var(--sh-primary) 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.auth-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--sh-primary) 30%, transparent);
+}
+
+.auth-submit-btn:active {
+  transform: translateY(0);
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.auth-toggle-wrapper {
+  text-align: center;
+  padding-top: 0.5rem;
+}
+
+.auth-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--sh-primary);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  padding: 0.5rem 0;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.auth-toggle-btn:hover {
+  color: var(--sh-accent);
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .auth-wrapper {
+    padding: 1rem;
+  }
+
+  .auth-card {
+    max-width: 100%;
+    padding: 1.5rem;
+  }
+
+  .auth-card h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .auth-form-group {
+    margin-bottom: 1rem;
+  }
+
+  .auth-form-group label {
+    font-size: 0.9rem;
+  }
+
+  .auth-form-group input {
+    padding: 0.7rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .auth-submit-btn {
+    padding: 0.75rem 0.9rem;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-wrapper {
+    padding: 0.75rem;
+  }
+
+  .auth-card {
+    padding: 1.2rem;
+    border-radius: 12px;
+  }
+
+  .auth-card h2 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+  }
+
+  .auth-form-group {
+    margin-bottom: 0.9rem;
+  }
+
+  .auth-form-group label {
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .auth-form-group input {
+    padding: 0.65rem 0.7rem;
+    font-size: 0.85rem;
+  }
+
+  .auth-submit-btn {
+    padding: 0.7rem 0.8rem;
+    font-size: 0.9rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .auth-toggle-btn {
+    font-size: 0.85rem;
+  }
+}
