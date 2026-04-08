@@ -11,6 +11,84 @@ import { auth, db } from '../firebase';
 import { ThemeContext } from '../ThemeContext';
 import './DataPage.css';
 
+const formatDayKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getRecentDayKeys = (days) => {
+  const list = [];
+
+  for (let offset = days - 1; offset >= 0; offset -= 1) {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - offset);
+    list.push({
+      key: formatDayKey(date),
+      label: date.toLocaleDateString(undefined, { weekday: 'short' }),
+    });
+  }
+
+  return list;
+};
+
+const buildTrendPath = (values, width, height, padding = 16) => {
+  if (!values.length) {
+    return '';
+  }
+
+  const maxValue = Math.max(...values, 1);
+  const minValue = Math.min(...values, 0);
+  const range = Math.max(1, maxValue - minValue);
+  const xStep = values.length > 1 ? (width - padding * 2) / (values.length - 1) : 0;
+
+  return values
+    .map((value, index) => {
+      const x = padding + index * xStep;
+      const normalized = (value - minValue) / range;
+      const y = height - padding - normalized * (height - padding * 2);
+      return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
+    })
+    .join(' ');
+};
+
+const TREND_METRICS = {
+  score: {
+    label: 'Score',
+    subtitle: 'Daily score from workouts, meals, and calorie consistency',
+    stroke: '#10b981',
+    fillStart: 'rgba(16, 185, 129, 0.35)',
+    fillEnd: 'rgba(16, 185, 129, 0.03)',
+    formatter: (value) => `${Math.round(value)}`,
+  },
+  calories: {
+    label: 'Calories',
+    subtitle: 'Daily meal calories logged',
+    stroke: '#f97316',
+    fillStart: 'rgba(249, 115, 22, 0.35)',
+    fillEnd: 'rgba(249, 115, 22, 0.03)',
+    formatter: (value) => `${Math.round(value).toLocaleString()} kcal`,
+  },
+  workouts: {
+    label: 'Workouts',
+    subtitle: 'Workout logs completed each day',
+    stroke: '#6366f1',
+    fillStart: 'rgba(99, 102, 241, 0.35)',
+    fillEnd: 'rgba(99, 102, 241, 0.03)',
+    formatter: (value) => `${Math.round(value)}`,
+  },
+  meals: {
+    label: 'Meals',
+    subtitle: 'Meal logs captured each day',
+    stroke: '#0ea5e9',
+    fillStart: 'rgba(14, 165, 233, 0.35)',
+    fillEnd: 'rgba(14, 165, 233, 0.03)',
+    formatter: (value) => `${Math.round(value)}`,
+  },
+};
+
 const buildCoachInsight = (summary) => {
   const points = [];
 
@@ -54,6 +132,8 @@ const DataPage = ({ user }) => {
     mealsLogged: 0,
     weeklyCalories: 0,
   });
+  const [weeklyTrend, setWeeklyTrend] = useState([]);
+  const [activeTrendMetric, setActiveTrendMetric] = useState('score');
   const [weeklySummary, setWeeklySummary] = useState({
     periodDays: 7,
     workoutsLogged: 0,
@@ -88,6 +168,9 @@ const DataPage = ({ user }) => {
   const hasPendingWorkoutDelta = optimisticSummaryDelta.workoutsLogged > 0;
   const hasPendingMealDelta = optimisticSummaryDelta.mealsLogged > 0;
   const hasPendingScoreDelta = hasPendingWorkoutDelta || hasPendingMealDelta;
+  const activeTrendConfig = TREND_METRICS[activeTrendMetric] || TREND_METRICS.score;
+  const trendValues = weeklyTrend.map((entry) => Number(entry[activeTrendMetric] || 0));
+  const trendPath = buildTrendPath(trendValues, 560, 180, 18);
 
   displayedSummary.consistencyScore = Math.min(
     100,
@@ -164,6 +247,62 @@ const DataPage = ({ user }) => {
           firstWeight !== null && latestWeightKg !== null ? Number((latestWeightKg - firstWeight).toFixed(1)) : null;
         const consistencyScore = Math.min(100, workoutsLogged * 12 + mealsLogged * 6 + (weightEntries.length > 0 ? 16 : 0));
 
+        const recentDays = getRecentDayKeys(7);
+        const trendByDay = recentDays.reduce((acc, day) => {
+          acc[day.key] = {
+            label: day.label,
+            workouts: 0,
+            meals: 0,
+            calories: 0,
+          };
+          return acc;
+        }, {});
+
+        workoutsSnapshot.docs.forEach((docSnapshot) => {
+          const createdAtMs = docSnapshot.data().createdAt?.toMillis?.();
+          if (!createdAtMs) {
+            return;
+          }
+
+          const dayKey = formatDayKey(new Date(createdAtMs));
+          if (trendByDay[dayKey]) {
+            trendByDay[dayKey].workouts += 1;
+          }
+        });
+
+        mealsSnapshot.docs.forEach((docSnapshot) => {
+          const data = docSnapshot.data();
+          const createdAtMs = data.createdAt?.toMillis?.();
+          if (!createdAtMs) {
+            return;
+          }
+
+          const dayKey = formatDayKey(new Date(createdAtMs));
+          if (!trendByDay[dayKey]) {
+            return;
+          }
+
+          trendByDay[dayKey].meals += 1;
+          const caloriesValue = Number(data.calories || 0);
+          trendByDay[dayKey].calories += Number.isFinite(caloriesValue) ? caloriesValue : 0;
+        });
+
+        const trendSeries = recentDays.map((day) => {
+          const dayData = trendByDay[day.key] || {
+            label: day.label,
+            workouts: 0,
+            meals: 0,
+            calories: 0,
+          };
+
+          return {
+            ...dayData,
+            score: Math.min(100, dayData.workouts * 20 + dayData.meals * 10 + (dayData.calories >= 1200 ? 12 : 0)),
+          };
+        });
+
+        setWeeklyTrend(trendSeries);
+
         const nextSummary = {
           periodDays: 7,
           workoutsLogged,
@@ -202,6 +341,7 @@ const DataPage = ({ user }) => {
       } catch (error) {
         console.error('Error loading weekly summary:', error);
         setSummaryError('Could not load weekly trends yet. Keep logging and try again.');
+        setWeeklyTrend([]);
       }
     };
 
@@ -290,6 +430,65 @@ const DataPage = ({ user }) => {
                 {hasPendingScoreDelta ? <span className="metric-pending-badge">pending</span> : null}
               </p>
               <p className="coach-copy mb-0">{coachInsight}</p>
+            </article>
+
+            <article className="trend-card">
+              <div className="trend-head">
+                <p className="trend-title mb-0">7-Day Change Trend</p>
+                <p className="trend-subtitle mb-0">{activeTrendConfig.subtitle}</p>
+              </div>
+
+              <div className="trend-toggle-row" role="tablist" aria-label="Trend metric toggles">
+                {Object.entries(TREND_METRICS).map(([metricKey, metricConfig]) => (
+                  <button
+                    key={metricKey}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTrendMetric === metricKey}
+                    className={`trend-toggle-btn ${activeTrendMetric === metricKey ? 'is-active' : ''}`}
+                    onClick={() => setActiveTrendMetric(metricKey)}
+                  >
+                    {metricConfig.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="trend-chart-wrap" role="img" aria-label={`Seven day ${activeTrendConfig.label.toLowerCase()} trend`}>
+                {weeklyTrend.length > 0 ? (
+                  <svg
+                    viewBox="0 0 560 180"
+                    className="trend-chart"
+                    preserveAspectRatio="none"
+                    style={{
+                      '--trend-stroke': activeTrendConfig.stroke,
+                      '--trend-fill-start': activeTrendConfig.fillStart,
+                      '--trend-fill-end': activeTrendConfig.fillEnd,
+                    }}
+                  >
+                    <defs>
+                      <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--trend-fill-start)" />
+                        <stop offset="100%" stopColor="var(--trend-fill-end)" />
+                      </linearGradient>
+                    </defs>
+                    {trendPath ? <path d={`${trendPath} L 542 162 L 18 162 Z`} fill="url(#trendFill)" /> : null}
+                    {trendPath ? (
+                      <path d={trendPath} fill="none" stroke="var(--trend-stroke)" strokeWidth="3" strokeLinecap="round" />
+                    ) : null}
+                  </svg>
+                ) : (
+                  <p className="trend-empty mb-0">Trend graph will appear after your first logs this week.</p>
+                )}
+              </div>
+
+              <div className="trend-label-row">
+                {weeklyTrend.map((entry, index) => (
+                  <div key={`${entry.label}-${index}`} className="trend-day">
+                    <span className="trend-day-label">{entry.label}</span>
+                    <span className="trend-day-score">{activeTrendConfig.formatter(entry[activeTrendMetric] || 0)}</span>
+                  </div>
+                ))}
+              </div>
             </article>
           </section>
 
