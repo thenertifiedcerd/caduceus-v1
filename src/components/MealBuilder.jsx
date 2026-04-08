@@ -93,7 +93,7 @@ const MealBuilder = ({ onMealBuilt, isDarkMode }) => {
         variant="outline-primary"
         size="sm"
         onClick={() => setShowBuilder(true)}
-        className="mb-3"
+        className="mb-3 w-100 meal-builder-trigger"
       >
         <Plus size={16} className="me-2" /> Build Meal
       </Button>

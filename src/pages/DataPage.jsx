@@ -11,6 +11,8 @@ import { auth, db } from '../firebase';
 import { ThemeContext } from '../ThemeContext';
 import './DataPage.css';
 
+const OPTIMISTIC_DELTA_TTL_MS = 15000;
+
 const buildCoachInsight = (summary) => {
   const points = [];
 
@@ -49,6 +51,11 @@ const DataPage = ({ user }) => {
   const [logoutError, setLogoutError] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [summaryError, setSummaryError] = useState('');
+  const [optimisticSummaryDelta, setOptimisticSummaryDelta] = useState({
+    workoutsLogged: 0,
+    mealsLogged: 0,
+    weeklyCalories: 0,
+  });
   const [weeklySummary, setWeeklySummary] = useState({
     periodDays: 7,
     workoutsLogged: 0,
@@ -59,7 +66,48 @@ const DataPage = ({ user }) => {
     consistencyScore: 0,
   });
 
-  const coachInsight = buildCoachInsight(weeklySummary);
+  const applyOptimisticSummaryDelta = (delta = {}) => {
+    const safeDelta = {
+      workoutsLogged: Number(delta.workoutsLogged || 0),
+      mealsLogged: Number(delta.mealsLogged || 0),
+      weeklyCalories: Number(delta.weeklyCalories || 0),
+    };
+
+    setOptimisticSummaryDelta((current) => ({
+      workoutsLogged: current.workoutsLogged + safeDelta.workoutsLogged,
+      mealsLogged: current.mealsLogged + safeDelta.mealsLogged,
+      weeklyCalories: current.weeklyCalories + safeDelta.weeklyCalories,
+    }));
+
+    // Automatically remove temporary optimistic contribution after a short window.
+    setTimeout(() => {
+      setOptimisticSummaryDelta((current) => ({
+        workoutsLogged: Math.max(0, current.workoutsLogged - safeDelta.workoutsLogged),
+        mealsLogged: Math.max(0, current.mealsLogged - safeDelta.mealsLogged),
+        weeklyCalories: Math.max(0, current.weeklyCalories - safeDelta.weeklyCalories),
+      }));
+    }, OPTIMISTIC_DELTA_TTL_MS);
+  };
+
+  const displayedSummary = {
+    ...weeklySummary,
+    workoutsLogged: weeklySummary.workoutsLogged + optimisticSummaryDelta.workoutsLogged,
+    mealsLogged: weeklySummary.mealsLogged + optimisticSummaryDelta.mealsLogged,
+    weeklyCalories: weeklySummary.weeklyCalories + optimisticSummaryDelta.weeklyCalories,
+  };
+
+  const hasPendingWorkoutDelta = optimisticSummaryDelta.workoutsLogged > 0;
+  const hasPendingMealDelta = optimisticSummaryDelta.mealsLogged > 0;
+  const hasPendingScoreDelta = hasPendingWorkoutDelta || hasPendingMealDelta;
+
+  displayedSummary.consistencyScore = Math.min(
+    100,
+    displayedSummary.workoutsLogged * 12 +
+      displayedSummary.mealsLogged * 6 +
+      (weeklySummary.latestWeightKg !== null || weeklySummary.weeklyWeightDeltaKg !== null ? 16 : 0)
+  );
+
+  const coachInsight = buildCoachInsight(displayedSummary);
 
   useEffect(() => {
     updateMetaTags({
@@ -202,46 +250,70 @@ const DataPage = ({ user }) => {
 
         {logoutError ? <p className="text-danger mb-4 text-center">{logoutError}</p> : null}
 
-        <div className="dashboard-grid">
+        <div className="dashboard-layout">
           <section className="data-section-card dashboard-summary">
             <div className="data-section-title">Weekly Summary</div>
             {summaryError ? <p className="text-danger mb-3">{summaryError}</p> : null}
 
             <div className="metric-grid mb-4">
               <article className="metric-card metric-workouts h-100">
-                <p className="metric-label">Workouts (7d)</p>
-                <h3 className="metric-value">{weeklySummary.workoutsLogged}</h3>
+                <p className="metric-label">
+                  Workouts (7d)
+                  {hasPendingWorkoutDelta ? <span className="metric-pending-badge">+{optimisticSummaryDelta.workoutsLogged} pending</span> : null}
+                </p>
+                <h3 className="metric-value">{displayedSummary.workoutsLogged}</h3>
               </article>
               <article className="metric-card metric-meals h-100">
-                <p className="metric-label">Meals (7d)</p>
-                <h3 className="metric-value">{weeklySummary.mealsLogged}</h3>
+                <p className="metric-label">
+                  Meals (7d)
+                  {hasPendingMealDelta ? <span className="metric-pending-badge">+{optimisticSummaryDelta.mealsLogged} pending</span> : null}
+                </p>
+                <h3 className="metric-value">{displayedSummary.mealsLogged}</h3>
               </article>
               <article className="metric-card metric-weight h-100">
                 <p className="metric-label">Weight Delta (7d)</p>
-                <h3 className="metric-value">{weeklySummary.weeklyWeightDeltaKg !== null ? `${weeklySummary.weeklyWeightDeltaKg} kg` : 'N/A'}</h3>
+                <h3 className="metric-value">{displayedSummary.weeklyWeightDeltaKg !== null ? `${displayedSummary.weeklyWeightDeltaKg} kg` : 'N/A'}</h3>
               </article>
               <article className="metric-card metric-score h-100">
-                <p className="metric-label">Consistency Score</p>
-                <h3 className="metric-value">{weeklySummary.consistencyScore}/100</h3>
+                <p className="metric-label">
+                  Consistency Score
+                  {hasPendingScoreDelta ? <span className="metric-pending-badge">pending</span> : null}
+                </p>
+                <h3 className="metric-value">{displayedSummary.consistencyScore}/100</h3>
               </article>
             </div>
 
             <article className="coach-card">
-              <p className="coach-kicker">Coach Insight</p>
+              <p className="coach-kicker">
+                Coach Insight
+                {hasPendingScoreDelta ? <span className="metric-pending-badge">pending</span> : null}
+              </p>
               <p className="coach-copy mb-0">{coachInsight}</p>
             </article>
           </section>
 
-          <section className="data-section-card dashboard-activity">
-            <div className="data-section-title">Logging Activity</div>
+          <section className="dashboard-activity">
+            <div className="data-section-title logger-section-title">Logging Activity</div>
             <div className="logger-grid">
               <article className="logger-card">
                 <header className="logger-head logger-workout">Workout Logger</header>
-                <WorkoutLogger user={user} onWorkoutLogged={() => setRefreshKey((current) => current + 1)} />
+                <WorkoutLogger
+                  user={user}
+                  onWorkoutLogged={(delta) => {
+                    applyOptimisticSummaryDelta(delta);
+                    setRefreshKey((current) => current + 1);
+                  }}
+                />
               </article>
               <article className="logger-card">
                 <header className="logger-head logger-meal">Meal Logger</header>
-                <MealLogger user={user} onMealLogged={() => setRefreshKey((current) => current + 1)} />
+                <MealLogger
+                  user={user}
+                  onMealLogged={(delta) => {
+                    applyOptimisticSummaryDelta(delta);
+                    setRefreshKey((current) => current + 1);
+                  }}
+                />
               </article>
               <article className="logger-card">
                 <header className="logger-head logger-biometrics">Biometrics</header>

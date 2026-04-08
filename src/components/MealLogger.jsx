@@ -29,10 +29,19 @@ const MealLogger = ({ user, onMealLogged }) => {
       }
 
       try {
-        const response = await fetch(
-          `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(searchTerm)}&search_simple=1&action=process&json=1&page_size=5`,
-          { signal: abortController.signal }
-        );
+        const params = new URLSearchParams({
+          search_terms: searchTerm,
+          fields: 'product_name,generic_name,nutriments',
+          page_size: '5',
+        });
+
+        const response = await fetch(`https://world.openfoodfacts.org/api/v2/search?${params.toString()}`, {
+          signal: abortController.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`OpenFoodFacts search failed: ${response.status}`);
+        }
 
         const data = await response.json();
         const foods = (data.products || []).map((product) => ({
@@ -66,7 +75,7 @@ const MealLogger = ({ user, onMealLogged }) => {
     setSuggestions([]);
   };
 
-  const handleSaveMeal = async (event) => {
+  const handleSaveMeal = (event) => {
     event.preventDefault();
     setSaveMessage('');
 
@@ -82,38 +91,52 @@ const MealLogger = ({ user, onMealLogged }) => {
 
     setIsSaving(true);
 
-    try {
-      await addDoc(collection(db, 'meal_logs'), {
-        uid: user.uid,
-        mealName: mealName.trim(),
-        calories: calories ? Number(calories) : 0,
-        proteinG: protein ? Number(protein) : 0,
-        carbsG: carbs ? Number(carbs) : 0,
-        fatG: fat ? Number(fat) : 0,
-        createdAt: serverTimestamp(),
+    const payload = {
+      uid: user.uid,
+      mealName: mealName.trim(),
+      calories: calories ? Number(calories) : 0,
+      proteinG: protein ? Number(protein) : 0,
+      carbsG: carbs ? Number(carbs) : 0,
+      fatG: fat ? Number(fat) : 0,
+      createdAt: serverTimestamp(),
+    };
+
+    // Optimistic UI: clear immediately and sync in background.
+    setSaveMessage('Meal saved locally. Syncing...');
+    setSearchTerm('');
+    setMealName('');
+    setCalories('');
+    setProtein('');
+    setCarbs('');
+    setFat('');
+    setSuggestions([]);
+
+    if (onMealLogged) {
+      onMealLogged({
+        mealsLogged: 1,
+        weeklyCalories: payload.calories,
       });
-
-      setSaveMessage('Meal saved.');
-      setSearchTerm('');
-      setMealName('');
-      setCalories('');
-      setProtein('');
-      setCarbs('');
-      setFat('');
-      setSuggestions([]);
-
-      if (onMealLogged) {
-        onMealLogged();
-      }
-    } catch (error) {
-      console.error('Error saving meal:', error);
-      setSaveMessage('Could not save meal. Try again.');
-    } finally {
-      setIsSaving(false);
     }
+
+    setIsSaving(false);
+
+    const syncDelayTimer = setTimeout(() => {
+      setSaveMessage('Meal saved locally. Sync is taking longer than expected.');
+    }, 4500);
+
+    addDoc(collection(db, 'meal_logs'), payload)
+      .then(() => {
+        clearTimeout(syncDelayTimer);
+        setSaveMessage('Meal saved.');
+      })
+      .catch((error) => {
+        clearTimeout(syncDelayTimer);
+        console.error('Error saving meal:', error);
+        setSaveMessage('Could not sync meal. Please try again.');
+      });
   };
 
-  const handleMealBuilt = async (mealData) => {
+  const handleMealBuilt = (mealData) => {
     setSaveMessage('');
 
     if (!user?.uid) {
@@ -123,39 +146,51 @@ const MealLogger = ({ user, onMealLogged }) => {
 
     setIsSaving(true);
 
-    try {
-      const { name, totals } = mealData;
+    const { name, totals } = mealData;
+    const payload = {
+      uid: user.uid,
+      mealName: name,
+      calories: totals.calories,
+      proteinG: totals.protein,
+      carbsG: totals.carbs,
+      fatG: totals.fat,
+      fiberG: totals.fiber,
+      isBuilt: true,
+      createdAt: serverTimestamp(),
+    };
 
-      await addDoc(collection(db, 'meal_logs'), {
-        uid: user.uid,
-        mealName: name,
-        calories: totals.calories,
-        proteinG: totals.protein,
-        carbsG: totals.carbs,
-        fatG: totals.fat,
-        fiberG: totals.fiber,
-        isBuilt: true,
-        createdAt: serverTimestamp(),
+    setSaveMessage('Meal built and saved locally. Syncing...');
+    setSearchTerm('');
+    setMealName('');
+    setCalories('');
+    setProtein('');
+    setCarbs('');
+    setFat('');
+    setSuggestions([]);
+
+    if (onMealLogged) {
+      onMealLogged({
+        mealsLogged: 1,
+        weeklyCalories: payload.calories,
       });
-
-      setSaveMessage('Meal built and saved.');
-      setSearchTerm('');
-      setMealName('');
-      setCalories('');
-      setProtein('');
-      setCarbs('');
-      setFat('');
-      setSuggestions([]);
-
-      if (onMealLogged) {
-        onMealLogged();
-      }
-    } catch (error) {
-      console.error('Error saving built meal:', error);
-      setSaveMessage('Could not save meal. Try again.');
-    } finally {
-      setIsSaving(false);
     }
+
+    setIsSaving(false);
+
+    const syncDelayTimer = setTimeout(() => {
+      setSaveMessage('Meal built and saved locally. Sync is taking longer than expected.');
+    }, 4500);
+
+    addDoc(collection(db, 'meal_logs'), payload)
+      .then(() => {
+        clearTimeout(syncDelayTimer);
+        setSaveMessage('Meal built and saved.');
+      })
+      .catch((error) => {
+        clearTimeout(syncDelayTimer);
+        console.error('Error saving built meal:', error);
+        setSaveMessage('Could not sync meal. Please try again.');
+      });
   };
 
   return (

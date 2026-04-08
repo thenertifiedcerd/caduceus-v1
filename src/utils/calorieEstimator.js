@@ -13,15 +13,23 @@ export const PORTION_SIZES = {
 
 export const searchFoodNutrition = async (foodName) => {
   try {
-    const response = await fetch(
-      `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(foodName)}&search_simple=1&action=process&json=1&page_size=10`
-    );
+    const params = new URLSearchParams({
+      search_terms: foodName,
+      fields: 'code,product_name,brands,nutriments',
+      page_size: '10',
+    });
+
+    const response = await fetch(`https://world.openfoodfacts.org/api/v2/search?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(`OpenFoodFacts search failed: ${response.status}`);
+    }
 
     const data = await response.json();
     const foods = (data.products || [])
       .filter((product) => product.product_name)
       .map((product) => ({
-        id: product.id,
+        id: product.id || product.code,
         name: product.product_name,
         brand: product.brands || '',
         calories: Number(product.nutriments?.['energy-kcal_100g'] || 0),

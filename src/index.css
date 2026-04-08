@@ -34,8 +34,8 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: 'Segoe UI', system-ui, sans-serif;
+  --heading: 'Segoe UI', system-ui, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 18px/145% var(--sans);
@@ -137,6 +137,14 @@ body {
   margin: 0;
   background: var(--sh-background);
   color: var(--sh-text-primary);
+  font-family: var(--sans);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: var(--sans);
 }
 
 .btn-primary {
@@ -168,15 +176,32 @@ body {
 }
 
 .brand-gradient-hover {
-  color: var(--sh-text-primary);
-  transition: background 0.3s ease, color 0.3s ease;
-}
-
-.brand-gradient-hover:hover {
-  background: linear-gradient(100deg, var(--sh-primary) 0%, var(--sh-accent) 100%);
+  display: inline-block;
+  line-height: 1.2;
+  padding-bottom: 0.06em;
+  overflow: visible;
+  background-image: linear-gradient(100deg, var(--sh-primary) 0%, var(--sh-accent) 100%);
+  background-size: 260% 100%;
+  background-position: 18% 50%;
+  background-repeat: no-repeat;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  -webkit-text-fill-color: transparent;
+  transition: background-position 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.brand-gradient-hover:hover {
+  background-position: 84% 50%;
+}
+
+.brand-gradient-hover:focus-visible {
+  background-position: 84% 50%;
+}
+
+.brand-gradient-hover:active {
+  background-position: 100% 50%;
+  transition-duration: 0.2s;
 }
 
 #root {

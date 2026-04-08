@@ -1,6 +1,7 @@
 .data-page {
   min-height: 100vh;
   transition: background-color 0.3s ease;
+  overflow-x: clip;
 }
 
 .data-page-light {
@@ -15,14 +16,14 @@
   width: 100%;
   max-width: none;
   margin: 0 auto;
-  padding: 0 clamp(1rem, 2.5vw, 2.2rem);
+  padding: clamp(0.9rem, 2vw, 1.6rem) clamp(1rem, 2.5vw, 2.2rem) 0;
+  box-sizing: border-box;
 }
 
-.dashboard-grid {
+.dashboard-layout {
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.6fr);
-  gap: 1.1rem;
-  align-items: start;
+  grid-template-columns: 1fr;
+  gap: 1rem;
 }
 
 .dashboard-summary,
@@ -44,6 +45,19 @@
   margin-top: 0.45rem;
   margin-bottom: 0;
   color: var(--sh-text-muted);
+}
+
+.data-header h1,
+.data-header .display-5 {
+  margin: 0 !important;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.data-header .data-subtitle {
+  margin-top: 0.7rem;
 }
 
 .data-page-light .data-subtitle {
@@ -116,6 +130,10 @@
   gap: 0.9rem;
 }
 
+.dashboard-summary .metric-grid {
+  margin-bottom: 1.4rem;
+}
+
 .metric-card {
   border-radius: 18px;
   border-left: 4px solid transparent;
@@ -157,6 +175,31 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.metric-pending-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.14rem 0.5rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--sh-primary);
+  background: color-mix(in srgb, var(--sh-primary) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sh-primary) 36%, transparent);
+  white-space: nowrap;
+}
+
+.data-page-dark .metric-pending-badge {
+  color: #bfdbfe;
+  background: rgba(96, 165, 250, 0.2);
+  border-color: rgba(96, 165, 250, 0.45);
 }
 
 .data-page-light .metric-label {
@@ -180,6 +223,10 @@
   padding: 0.95rem;
 }
 
+.dashboard-summary .coach-card {
+  margin-top: 0.2rem;
+}
+
 .coach-kicker {
   margin: 0;
   font-size: 0.72rem;
@@ -187,6 +234,10 @@
   letter-spacing: 0.12em;
   font-weight: 800;
   color: var(--sh-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .data-page-light .coach-kicker {
@@ -222,7 +273,15 @@
 .logger-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(280px, 1fr));
-  gap: 0.95rem;
+  gap: 1rem;
+}
+
+.dashboard-activity {
+  padding: 0.2rem;
+}
+
+.logger-section-title {
+  margin-bottom: 0.9rem;
 }
 
 @media (min-width: 1400px) {
@@ -236,9 +295,9 @@
   }
 }
 
-@media (max-width: 1199px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 1280px) {
+  .logger-grid {
+    grid-template-columns: repeat(2, minmax(260px, 1fr));
   }
 }
 
@@ -376,6 +435,21 @@
 }
 
 @media (max-width: 640px) {
+  .data-header h1,
+  .data-header .display-5 {
+    font-size: clamp(1.85rem, 8.8vw, 2.35rem) !important;
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+  }
+
+  .data-header > div:first-child {
+    min-width: 0;
+  }
+
+  .data-header .brand-gradient-hover {
+    padding-inline: 0.02em;
+  }
+
   .metric-grid {
     grid-template-columns: 1fr;
   }

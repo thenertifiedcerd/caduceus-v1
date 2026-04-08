@@ -10,7 +10,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-family: var(--sans);
   box-sizing: border-box;
   overflow-x: hidden;
 }

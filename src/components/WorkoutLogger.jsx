@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { ListGroup } from 'react-bootstrap';
 import { Plus } from 'lucide-react';
+import { logEvent } from 'firebase/analytics';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { analytics, db } from '../firebase';
 import { ThemeContext } from '../ThemeContext';
 import './forms.css';
 
@@ -19,6 +20,12 @@ const WorkoutLogger = ({ user, onWorkoutLogged }) => {
 
   useEffect(() => {
     if (searchTerm.length > 2) {
+      if (analytics) {
+        logEvent(analytics, 'exercise_searched', {
+          search_term: searchTerm,
+        });
+      }
+
       fetch(`https://wger.de/api/v2/exercise/search/?term=${searchTerm}`)
         .then(res => res.json())
         .then(data => setSuggestions(data.suggestions || []))
@@ -28,7 +35,7 @@ const WorkoutLogger = ({ user, onWorkoutLogged }) => {
     }
   }, [searchTerm]);
 
-  const handleSaveWorkout = async (event) => {
+  const handleSaveWorkout = (event) => {
     event.preventDefault();
     setSaveMessage('');
 
@@ -54,33 +61,44 @@ const WorkoutLogger = ({ user, onWorkoutLogged }) => {
 
     setIsSaving(true);
 
-    try {
-      await addDoc(collection(db, 'workout_logs'), {
-        uid: user.uid,
-        exerciseName: searchTerm.trim(),
-        trackingMode: workoutMode,
-        reps: workoutMode === 'reps' ? Number(reps) : null,
-        sets: workoutMode === 'reps' ? Number(sets) : null,
-        durationSeconds: workoutMode === 'duration' ? Number(durationSeconds) : null,
-        createdAt: serverTimestamp(),
-      });
+    const payload = {
+      uid: user.uid,
+      exerciseName: searchTerm.trim(),
+      trackingMode: workoutMode,
+      reps: workoutMode === 'reps' ? Number(reps) : null,
+      sets: workoutMode === 'reps' ? Number(sets) : null,
+      durationSeconds: workoutMode === 'duration' ? Number(durationSeconds) : null,
+      createdAt: serverTimestamp(),
+    };
 
-      setSaveMessage('Workout saved.');
-      setReps('');
-      setSets('');
-      setDurationSeconds('');
-      setSearchTerm('');
-      setSuggestions([]);
+    // Optimistic UI: reset instantly, then sync in background.
+    setSaveMessage('Workout saved locally. Syncing...');
+    setReps('');
+    setSets('');
+    setDurationSeconds('');
+    setSearchTerm('');
+    setSuggestions([]);
 
-      if (onWorkoutLogged) {
-        onWorkoutLogged();
-      }
-    } catch (error) {
-      console.error('Error saving workout:', error);
-      setSaveMessage('Could not save workout. Try again.');
-    } finally {
-      setIsSaving(false);
+    if (onWorkoutLogged) {
+      onWorkoutLogged({ workoutsLogged: 1 });
     }
+
+    setIsSaving(false);
+
+    const syncDelayTimer = setTimeout(() => {
+      setSaveMessage('Workout saved locally. Sync is taking longer than expected.');
+    }, 4500);
+
+    addDoc(collection(db, 'workout_logs'), payload)
+      .then(() => {
+        clearTimeout(syncDelayTimer);
+        setSaveMessage('Workout saved.');
+      })
+      .catch((error) => {
+        clearTimeout(syncDelayTimer);
+        console.error('Error saving workout:', error);
+        setSaveMessage('Could not sync workout. Please try again.');
+      });
   };
 
   return (
