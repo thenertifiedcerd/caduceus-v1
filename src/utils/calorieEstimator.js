@@ -2,6 +2,8 @@
  * Calorie estimator and meal builder utilities
  */
 
+import { fetchOpenFoodFactsSearch } from './openFoodFacts';
+
 export const PORTION_SIZES = {
   grams: { label: 'grams (g)', multiplier: 1 },
   ounces: { label: 'ounces (oz)', multiplier: 28.35 },
@@ -13,19 +15,12 @@ export const PORTION_SIZES = {
 
 export const searchFoodNutrition = async (foodName) => {
   try {
-    const params = new URLSearchParams({
+    const data = await fetchOpenFoodFactsSearch({
       search_terms: foodName,
       fields: 'code,product_name,brands,nutriments',
       page_size: '10',
     });
 
-    const response = await fetch(`https://world.openfoodfacts.org/api/v2/search?${params.toString()}`);
-
-    if (!response.ok) {
-      throw new Error(`OpenFoodFacts search failed: ${response.status}`);
-    }
-
-    const data = await response.json();
     const foods = (data.products || [])
       .filter((product) => product.product_name)
       .map((product) => ({

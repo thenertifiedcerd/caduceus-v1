@@ -5,6 +5,7 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ThemeContext } from '../ThemeContext';
 import MealBuilder from './MealBuilder';
+import { fetchOpenFoodFactsSearch } from '../utils/openFoodFacts';
 import './forms.css';
 
 const MealLogger = ({ user, onMealLogged }) => {
@@ -29,21 +30,12 @@ const MealLogger = ({ user, onMealLogged }) => {
       }
 
       try {
-        const params = new URLSearchParams({
+        const data = await fetchOpenFoodFactsSearch({
           search_terms: searchTerm,
           fields: 'product_name,generic_name,nutriments',
           page_size: '5',
-        });
+        }, abortController.signal);
 
-        const response = await fetch(`https://world.openfoodfacts.org/api/v2/search?${params.toString()}`, {
-          signal: abortController.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(`OpenFoodFacts search failed: ${response.status}`);
-        }
-
-        const data = await response.json();
         const foods = (data.products || []).map((product) => ({
           name: product.product_name || product.generic_name || 'Unknown food',
           calories: Number(product.nutriments?.['energy-kcal_100g'] || 0),
