@@ -9,10 +9,11 @@ const firebaseConfig = {
 	storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
 	messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
 	appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
+	measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || '',
 };
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-	console.warn('Firebase is not fully configured. Add VITE_FIREBASE_* values to .env.');
+	throw new Error('Firebase is not fully configured. Add VITE_FIREBASE_* values to .env.');
 }
 
 const app = initializeApp(firebaseConfig);
