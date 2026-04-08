@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function ownsIncomingUid() {
+      return signedIn() && request.resource.data.uid == request.auth.uid;
+    }
+
+    function ownsStoredUid() {
+      return signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow create: if signedIn() && request.auth.uid == userId && request.resource.data.uid == userId;
+      allow update: if signedIn() && request.auth.uid == userId && request.resource.data.uid == userId;
+      allow delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /workout_logs/{docId} {
+      allow create: if ownsIncomingUid();
+      allow read, update, delete: if ownsStoredUid();
+    }
+
+    match /meal_logs/{docId} {
+      allow create: if ownsIncomingUid();
+      allow read, update, delete: if ownsStoredUid();
+    }
+
+    match /body_metrics/{docId} {
+      allow create: if ownsIncomingUid();
+      allow read, update, delete: if ownsStoredUid();
+    }
+
+    match /ai_insights/{docId} {
+      allow create: if ownsIncomingUid();
+      allow read, update, delete: if ownsStoredUid();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
