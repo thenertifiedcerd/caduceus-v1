@@ -128,11 +128,22 @@ const MealLogger = ({ user, onMealLogged }) => {
       .then(() => {
         clearTimeout(syncDelayTimer);
         setSaveMessage('Meal saved.');
+        if (onMealLogged) {
+          // Refresh summary again after backend confirmation.
+          onMealLogged();
+        }
       })
       .catch((error) => {
         clearTimeout(syncDelayTimer);
         console.error('Error saving meal:', error);
         setSaveMessage('Could not sync meal. Please try again.');
+        if (onMealLogged) {
+          // Revert optimistic summary increment on failed sync.
+          onMealLogged({
+            mealsLogged: -1,
+            weeklyCalories: -payload.calories,
+          });
+        }
       });
   };
 
@@ -185,11 +196,22 @@ const MealLogger = ({ user, onMealLogged }) => {
       .then(() => {
         clearTimeout(syncDelayTimer);
         setSaveMessage('Meal built and saved.');
+        if (onMealLogged) {
+          // Refresh summary again after backend confirmation.
+          onMealLogged();
+        }
       })
       .catch((error) => {
         clearTimeout(syncDelayTimer);
         console.error('Error saving built meal:', error);
         setSaveMessage('Could not sync meal. Please try again.');
+        if (onMealLogged) {
+          // Revert optimistic summary increment on failed sync.
+          onMealLogged({
+            mealsLogged: -1,
+            weeklyCalories: -payload.calories,
+          });
+        }
       });
   };
 

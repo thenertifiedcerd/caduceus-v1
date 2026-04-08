@@ -93,11 +93,19 @@ const WorkoutLogger = ({ user, onWorkoutLogged }) => {
       .then(() => {
         clearTimeout(syncDelayTimer);
         setSaveMessage('Workout saved.');
+        if (onWorkoutLogged) {
+          // Refresh summary again after backend confirmation.
+          onWorkoutLogged();
+        }
       })
       .catch((error) => {
         clearTimeout(syncDelayTimer);
         console.error('Error saving workout:', error);
         setSaveMessage('Could not sync workout. Please try again.');
+        if (onWorkoutLogged) {
+          // Revert optimistic increment when backend sync fails.
+          onWorkoutLogged({ workoutsLogged: -1 });
+        }
       });
   };
 

@@ -72,9 +72,9 @@ const DataPage = ({ user }) => {
     };
 
     setOptimisticSummaryDelta((current) => ({
-      workoutsLogged: current.workoutsLogged + safeDelta.workoutsLogged,
-      mealsLogged: current.mealsLogged + safeDelta.mealsLogged,
-      weeklyCalories: current.weeklyCalories + safeDelta.weeklyCalories,
+      workoutsLogged: Math.max(0, current.workoutsLogged + safeDelta.workoutsLogged),
+      mealsLogged: Math.max(0, current.mealsLogged + safeDelta.mealsLogged),
+      weeklyCalories: Math.max(0, current.weeklyCalories + safeDelta.weeklyCalories),
     }));
   };
 
