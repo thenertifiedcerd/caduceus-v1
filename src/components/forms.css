@@ -73,9 +73,9 @@
 }
 
 /* Dark Mode */
-:root[class*="dark"] .form-input-wrapper input,
-:root[class*="dark"] .form-input-wrapper select,
-:root[class*="dark"] .form-input-wrapper textarea,
+:root[data-bs-theme='dark'] .form-input-wrapper input,
+:root[data-bs-theme='dark'] .form-input-wrapper select,
+:root[data-bs-theme='dark'] .form-input-wrapper textarea,
 .dark-mode .form-input-wrapper input,
 .dark-mode .form-input-wrapper select,
 .dark-mode .form-input-wrapper textarea {
@@ -84,9 +84,9 @@
   color: #e0e0e0;
 }
 
-:root[class*="dark"] .form-input-wrapper input:hover,
-:root[class*="dark"] .form-input-wrapper select:hover,
-:root[class*="dark"] .form-input-wrapper textarea:hover,
+:root[data-bs-theme='dark'] .form-input-wrapper input:hover,
+:root[data-bs-theme='dark'] .form-input-wrapper select:hover,
+:root[data-bs-theme='dark'] .form-input-wrapper textarea:hover,
 .dark-mode .form-input-wrapper input:hover,
 .dark-mode .form-input-wrapper select:hover,
 .dark-mode .form-input-wrapper textarea:hover {
@@ -94,9 +94,9 @@
   background-color: #333;
 }
 
-:root[class*="dark"] .form-input-wrapper input:focus,
-:root[class*="dark"] .form-input-wrapper select:focus,
-:root[class*="dark"] .form-input-wrapper textarea:focus,
+:root[data-bs-theme='dark'] .form-input-wrapper input:focus,
+:root[data-bs-theme='dark'] .form-input-wrapper select:focus,
+:root[data-bs-theme='dark'] .form-input-wrapper textarea:focus,
 .dark-mode .form-input-wrapper input:focus,
 .dark-mode .form-input-wrapper select:focus,
 .dark-mode .form-input-wrapper textarea:focus {
@@ -105,7 +105,7 @@
   box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1);
 }
 
-:root[class*="dark"] .form-input-group label,
+:root[data-bs-theme='dark'] .form-input-group label,
 .dark-mode .form-input-group label {
   color: #e0e0e0;
 }
@@ -189,13 +189,13 @@
 }
 
 .dark-mode .form-btn-outline,
-:root[class*="dark"] .form-btn-outline {
+:root[data-bs-theme='dark'] .form-btn-outline {
   border-color: #3a3a3a;
   color: #b0b0b0;
 }
 
 .dark-mode .form-btn-outline:hover:not(:disabled),
-:root[class*="dark"] .form-btn-outline:hover:not(:disabled) {
+:root[data-bs-theme='dark'] .form-btn-outline:hover:not(:disabled) {
   background-color: #2a2a2a;
   border-color: #5a5a5a;
   color: #e0e0e0;
@@ -226,14 +226,14 @@
 }
 
 .dark-mode .form-message-success,
-:root[class*="dark"] .form-message-success {
+:root[data-bs-theme='dark'] .form-message-success {
   background-color: rgba(34, 197, 94, 0.15);
   border: 1px solid rgba(34, 197, 94, 0.3);
   color: #86efac;
 }
 
 .dark-mode .form-message-error,
-:root[class*="dark"] .form-message-error {
+:root[data-bs-theme='dark'] .form-message-error {
   background-color: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
   color: #fca5a5;

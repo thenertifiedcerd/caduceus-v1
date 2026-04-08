@@ -53,8 +53,45 @@
   }
 }
 
+:root[data-bs-theme='dark'] {
+  --sh-primary: #2563eb;
+  --sh-accent: #4ade80;
+  --sh-background: #0f172a;
+  --sh-surface: #1e293b;
+  --sh-text-primary: #f1f5f9;
+  --sh-text-muted: #94a3b8;
+
+  --text: var(--sh-text-muted);
+  --text-h: var(--sh-text-primary);
+  --bg: var(--sh-background);
+  --border: #334155;
+  --code-bg: #273449;
+  --accent: var(--sh-accent);
+  --accent-bg: rgba(74, 222, 128, 0.16);
+  --accent-border: rgba(74, 222, 128, 0.45);
+  --social-bg: var(--sh-surface);
+  --panel-border: rgba(148, 163, 184, 0.18);
+  --panel-border-strong: rgba(96, 165, 250, 0.3);
+  --panel-surface: rgba(30, 41, 59, 0.94);
+  --panel-surface-muted: rgba(30, 41, 59, 0.86);
+  --panel-surface-strong: rgba(30, 41, 59, 0.98);
+  --panel-primary-soft: rgba(96, 165, 250, 0.12);
+  --panel-accent-soft: rgba(74, 222, 128, 0.1);
+  --metric-workouts-soft: rgba(79, 70, 229, 0.18);
+  --metric-meals-soft: rgba(16, 185, 129, 0.18);
+  --metric-weight-soft: rgba(14, 165, 233, 0.18);
+  --metric-score-soft: rgba(249, 115, 22, 0.18);
+  --logger-header-border: rgba(148, 163, 184, 0.2);
+  --input-border: rgba(148, 163, 184, 0.24);
+  --input-border-hover: rgba(96, 165, 250, 0.45);
+  --input-border-focus: rgba(96, 165, 250, 0.72);
+  --focus-ring: rgba(96, 165, 250, 0.18);
+  --shadow:
+    rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-bs-theme]) {
     --sh-primary: #2563eb;
     --sh-accent: #4ade80;
     --sh-background: #0f172a;

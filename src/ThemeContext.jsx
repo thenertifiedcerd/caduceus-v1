@@ -12,11 +12,7 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
     const root = document.documentElement;
-    if (isDarkMode) {
-      root.setAttribute('data-bs-theme', 'dark');
-    } else {
-      root.removeAttribute('data-bs-theme');
-    }
+    root.setAttribute('data-bs-theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
   const toggleTheme = () => setIsDarkMode(prev => !prev);
