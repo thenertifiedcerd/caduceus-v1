@@ -17,19 +17,30 @@ const MealLogger = ({ user, onMealLogged }) => {
   const [protein, setProtein] = useState('');
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
+  const [isSearchingFoods, setIsSearchingFoods] = useState(false);
+  const [foodSearchMessage, setFoodSearchMessage] = useState('');
+  const [isFoodSearchUnavailable, setIsFoodSearchUnavailable] = useState(false);
+  const [foodSearchRetryKey, setFoodSearchRetryKey] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
     const abortController = new AbortController();
+    let debounceTimer;
 
     const fetchFoodSuggestions = async () => {
       if (searchTerm.trim().length < 3) {
         setSuggestions([]);
+        setFoodSearchMessage('Type at least 3 letters to search foods.');
+        setIsFoodSearchUnavailable(false);
         return;
       }
 
       try {
+        setIsSearchingFoods(true);
+        setFoodSearchMessage('Searching food database...');
+        setIsFoodSearchUnavailable(false);
+
         const data = await fetchOpenFoodFactsSearch({
           search_terms: searchTerm,
           fields: 'product_name,generic_name,nutriments',
@@ -44,18 +55,36 @@ const MealLogger = ({ user, onMealLogged }) => {
           fat: Number(product.nutriments?.fat_100g || 0),
         }));
 
-        setSuggestions(foods.filter((food) => food.name && food.name !== 'Unknown food'));
+        const filtered = foods.filter((food) => food.name && food.name !== 'Unknown food');
+        setSuggestions(filtered);
+
+        if (filtered.length === 0) {
+          setFoodSearchMessage('No matches found. Try a simpler food name or enter values manually.');
+        } else {
+          setFoodSearchMessage('');
+        }
+        setIsFoodSearchUnavailable(false);
       } catch (error) {
         if (error.name !== 'AbortError') {
           console.error('Food search error:', error);
+          setSuggestions([]);
+          setFoodSearchMessage('Food search is temporarily unavailable. You can still save a meal by entering calories/macros manually.');
+          setIsFoodSearchUnavailable(true);
         }
+      } finally {
+        setIsSearchingFoods(false);
       }
     };
 
-    fetchFoodSuggestions();
+    debounceTimer = setTimeout(() => {
+      fetchFoodSuggestions();
+    }, 350);
 
-    return () => abortController.abort();
-  }, [searchTerm]);
+    return () => {
+      clearTimeout(debounceTimer);
+      abortController.abort();
+    };
+  }, [searchTerm, foodSearchRetryKey]);
 
   const handleSelectSuggestion = (food) => {
     setMealName(food.name);
@@ -65,6 +94,18 @@ const MealLogger = ({ user, onMealLogged }) => {
     setCarbs(food.carbs ? String(food.carbs) : '');
     setFat(food.fat ? String(food.fat) : '');
     setSuggestions([]);
+    setFoodSearchMessage('');
+    setIsFoodSearchUnavailable(false);
+  };
+
+  const handleRetryFoodSearch = () => {
+    if (searchTerm.trim().length < 3) {
+      setFoodSearchMessage('Type at least 3 letters to search foods.');
+      return;
+    }
+
+    setFoodSearchMessage('Searching food database...');
+    setFoodSearchRetryKey((previous) => previous + 1);
   };
 
   const handleSaveMeal = (event) => {
@@ -102,6 +143,8 @@ const MealLogger = ({ user, onMealLogged }) => {
     setCarbs('');
     setFat('');
     setSuggestions([]);
+    setFoodSearchMessage('');
+    setIsFoodSearchUnavailable(false);
 
     if (onMealLogged) {
       onMealLogged({
@@ -170,6 +213,8 @@ const MealLogger = ({ user, onMealLogged }) => {
     setCarbs('');
     setFat('');
     setSuggestions([]);
+    setFoodSearchMessage('');
+    setIsFoodSearchUnavailable(false);
 
     if (onMealLogged) {
       onMealLogged({
@@ -237,6 +282,19 @@ const MealLogger = ({ user, onMealLogged }) => {
               style={{ position: 'relative', zIndex: 10 }}
             />
             </div>
+
+            {isSearchingFoods ? <div className="form-helper-text">Searching...</div> : null}
+            {foodSearchMessage ? <div className="form-helper-text">{foodSearchMessage}</div> : null}
+            {isFoodSearchUnavailable ? (
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary mt-2"
+                onClick={handleRetryFoodSearch}
+                disabled={isSearchingFoods}
+              >
+                Try Again
+              </button>
+            ) : null}
 
             {suggestions.length > 0 ? (
               <ListGroup className="position-absolute w-100 shadow-lg mt-1" style={{ zIndex: 1000 }}>

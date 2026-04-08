@@ -14,31 +14,26 @@ export const PORTION_SIZES = {
 };
 
 export const searchFoodNutrition = async (foodName) => {
-  try {
-    const data = await fetchOpenFoodFactsSearch({
-      search_terms: foodName,
-      fields: 'code,product_name,brands,nutriments',
-      page_size: '10',
-    });
+  const data = await fetchOpenFoodFactsSearch({
+    search_terms: foodName,
+    fields: 'code,product_name,brands,nutriments',
+    page_size: '10',
+  });
 
-    const foods = (data.products || [])
-      .filter((product) => product.product_name)
-      .map((product) => ({
-        id: product.id || product.code,
-        name: product.product_name,
-        brand: product.brands || '',
-        calories: Number(product.nutriments?.['energy-kcal_100g'] || 0),
-        protein: Number(product.nutriments?.proteins_100g || 0),
-        carbs: Number(product.nutriments?.carbohydrates_100g || 0),
-        fat: Number(product.nutriments?.fat_100g || 0),
-        fiber: Number(product.nutriments?.fiber_100g || 0),
-      }));
+  const foods = (data.products || [])
+    .filter((product) => product.product_name)
+    .map((product) => ({
+      id: product.id || product.code,
+      name: product.product_name,
+      brand: product.brands || '',
+      calories: Number(product.nutriments?.['energy-kcal_100g'] || 0),
+      protein: Number(product.nutriments?.proteins_100g || 0),
+      carbs: Number(product.nutriments?.carbohydrates_100g || 0),
+      fat: Number(product.nutriments?.fat_100g || 0),
+      fiber: Number(product.nutriments?.fiber_100g || 0),
+    }));
 
-    return foods.slice(0, 8);
-  } catch (error) {
-    console.error('Food search error:', error);
-    return [];
-  }
+  return foods.slice(0, 8);
 };
 
 /**

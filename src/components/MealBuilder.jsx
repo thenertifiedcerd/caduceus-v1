@@ -14,6 +14,8 @@ const MealBuilder = ({ onMealBuilt, isDarkMode }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchMessage, setSearchMessage] = useState('');
+  const [isSearchUnavailable, setIsSearchUnavailable] = useState(false);
   const [selectedFood, setSelectedFood] = useState(null);
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState('grams');
@@ -23,12 +25,41 @@ const MealBuilder = ({ onMealBuilt, isDarkMode }) => {
   const mealTotals = calculateMealTotals(mealItems);
 
   const handleSearch = async () => {
-    if (searchTerm.trim().length < 2) return;
+    if (searchTerm.trim().length < 2) {
+      setSearchMessage('Type at least 2 letters to search.');
+      setIsSearchUnavailable(false);
+      return;
+    }
 
     setIsSearching(true);
-    const results = await searchFoodNutrition(searchTerm);
-    setSearchResults(results);
-    setIsSearching(false);
+
+    try {
+      const results = await searchFoodNutrition(searchTerm);
+      setSearchResults(results);
+
+      if (results.length === 0) {
+        setSearchMessage('No matches found. Try another term or add food details manually.');
+        setIsSearchUnavailable(false);
+      } else {
+        setSearchMessage('');
+        setIsSearchUnavailable(false);
+      }
+    } catch (error) {
+      console.error('Meal builder search error:', error);
+      setSearchResults([]);
+      setSearchMessage('Food search is temporarily unavailable. You can still build meals by entering nutrition manually in Quick Entry.');
+      setIsSearchUnavailable(true);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleRetrySearch = () => {
+    if (isSearching) {
+      return;
+    }
+
+    handleSearch();
   };
 
   const handleAddItem = () => {
@@ -54,6 +85,8 @@ const MealBuilder = ({ onMealBuilt, isDarkMode }) => {
     setUnit('grams');
     setSearchTerm('');
     setSearchResults([]);
+    setSearchMessage('');
+    setIsSearchUnavailable(false);
   };
 
   const handleRemoveItem = (id) => {
@@ -160,6 +193,21 @@ const MealBuilder = ({ onMealBuilt, isDarkMode }) => {
               </Button>
             </div>
           </Form.Group>
+
+          {searchMessage ? (
+            <div className="form-helper-text">{searchMessage}</div>
+          ) : null}
+
+          {isSearchUnavailable ? (
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary mt-2"
+              onClick={handleRetrySearch}
+              disabled={isSearching}
+            >
+              Try Again
+            </button>
+          ) : null}
 
           {/* Search Results */}
           {searchResults.length > 0 && (
