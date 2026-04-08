@@ -340,7 +340,7 @@ const DataPage = ({ user }) => {
         );
       } catch (error) {
         console.error('Error loading weekly summary:', error);
-        setSummaryError('Could not load weekly trends yet. Keep logging and try again.');
+        setSummaryError('Log for a week to see more info.');
         setWeeklyTrend([]);
       }
     };
@@ -394,7 +394,7 @@ const DataPage = ({ user }) => {
         <div className="dashboard-layout">
           <section className="data-section-card dashboard-summary">
             <div className="data-section-title">Weekly Summary</div>
-            {summaryError ? <p className="text-danger mb-3">{summaryError}</p> : null}
+            {summaryError ? <p className="summary-error text-danger mb-0">{summaryError}</p> : null}
 
             <div className="metric-grid mb-4">
               <article className="metric-card metric-workouts h-100">

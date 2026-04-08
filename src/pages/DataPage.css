@@ -124,6 +124,10 @@
   color: #475569;
 }
 
+.summary-error {
+  margin-bottom: 1rem;
+}
+
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(180px, 1fr));
