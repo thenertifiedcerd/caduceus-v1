@@ -11,8 +11,6 @@ import { auth, db } from '../firebase';
 import { ThemeContext } from '../ThemeContext';
 import './DataPage.css';
 
-const OPTIMISTIC_DELTA_TTL_MS = 15000;
-
 const buildCoachInsight = (summary) => {
   const points = [];
 
@@ -78,15 +76,6 @@ const DataPage = ({ user }) => {
       mealsLogged: current.mealsLogged + safeDelta.mealsLogged,
       weeklyCalories: current.weeklyCalories + safeDelta.weeklyCalories,
     }));
-
-    // Automatically remove temporary optimistic contribution after a short window.
-    setTimeout(() => {
-      setOptimisticSummaryDelta((current) => ({
-        workoutsLogged: Math.max(0, current.workoutsLogged - safeDelta.workoutsLogged),
-        mealsLogged: Math.max(0, current.mealsLogged - safeDelta.mealsLogged),
-        weeklyCalories: Math.max(0, current.weeklyCalories - safeDelta.weeklyCalories),
-      }));
-    }, OPTIMISTIC_DELTA_TTL_MS);
   };
 
   const displayedSummary = {
@@ -185,7 +174,19 @@ const DataPage = ({ user }) => {
           consistencyScore,
         };
 
-        setWeeklySummary(nextSummary);
+        setWeeklySummary((previousSummary) => {
+          const resolvedWorkoutDelta = Math.max(0, nextSummary.workoutsLogged - previousSummary.workoutsLogged);
+          const resolvedMealDelta = Math.max(0, nextSummary.mealsLogged - previousSummary.mealsLogged);
+          const resolvedCaloriesDelta = Math.max(0, nextSummary.weeklyCalories - previousSummary.weeklyCalories);
+
+          setOptimisticSummaryDelta((current) => ({
+            workoutsLogged: Math.max(0, current.workoutsLogged - resolvedWorkoutDelta),
+            mealsLogged: Math.max(0, current.mealsLogged - resolvedMealDelta),
+            weeklyCalories: Math.max(0, current.weeklyCalories - resolvedCaloriesDelta),
+          }));
+
+          return nextSummary;
+        });
 
         await setDoc(
           doc(db, 'ai_insights', `${user.uid}_weekly`),
