@@ -280,6 +280,7 @@
   letter-spacing: 0.04em;
   border-radius: 10px;
   text-transform: uppercase;
+  box-shadow: none;
 }
 
 .meal-builder-trigger:hover {
