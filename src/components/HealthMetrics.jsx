@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { addDoc, collection, doc, getDocs, limit, orderBy, query, serverTimestamp, setDoc, where, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc, where, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ThemeContext } from '../ThemeContext';
 import './forms.css';
@@ -39,12 +39,6 @@ const getSavedAge = (ageYears, ageRecordedAt) => {
   return currentAge.toFixed(1).replace(/\.0$/, '');
 };
 
-const pickLatestRecord = (records) => {
-  return records
-    .filter((record) => record && Number.isFinite(getTimestampMs(record.timestamp)))
-    .sort((left, right) => getTimestampMs(left.timestamp) - getTimestampMs(right.timestamp))[records.length - 1] || null;
-};
-
 const HealthMetrics = ({ user, onMetricsSaved }) => {
   const { isDarkMode } = useContext(ThemeContext);
   const [age, setAge] = useState('');
@@ -76,11 +70,11 @@ const HealthMetrics = ({ user, onMetricsSaved }) => {
         );
 
         const [userDocSnap, latestMetricsSnap] = await Promise.all([
-          getDocs(query(collection(db, 'users'), where('__name__', '==', user.uid))),
+          getDoc(userDocRef),
           getDocs(latestMetricsQuery),
         ]);
 
-        const userDocData = userDocSnap.docs[0]?.data() || {};
+        const userDocData = userDocSnap.data() || {};
         const profile = userDocData.biometricProfile || {};
         const latestMetricData = latestMetricsSnap.docs[0]?.data() || {};
 
